@@ -2,6 +2,12 @@
 __pycache__/
 *.py[cod]
 *$py.class
+email_sender/
+Redis/
+ngrok-v3-stable-windows-amd64.zip
+ngrok-v3-stable-windows-amd64
+dump.rdb
+server_log.txt
 
 # C extensions
 *.so

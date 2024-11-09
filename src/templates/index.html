@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Email Sender</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            padding-top: 50px;
+        }
+        .container {
+            max-width: 600px;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">Upload Data and Send Emails</h1>
+        <form action="/upload" method="post" enctype="multipart/form-data" class="mb-4">
+            <div class="form-group">
+                <label for="input_type">Input Type</label>
+                <select class="form-control" id="input_type" name="input_type" onchange="toggleInputFields()">
+                    <option value="csv">CSV File</option>
+                    <option value="google_sheet">Google Sheet</option>
+                </select>
+            </div>
+            <div class="form-group" id="csv_input">
+                <label for="file">Choose file</label>
+                <input type="file" class="form-control-file" id="file" name="file">
+            </div>
+            <div class="form-group" id="google_sheet_input" style="display: none;">
+                <label for="sheet_name">Google Sheet Name</label>
+                <input type="text" class="form-control" id="sheet_name" name="sheet_name" placeholder="Enter Google Sheet name">
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Upload</button>
+        </form>
+
+        {% if columns %}
+        <h2 class="text-center mb-4">Email Prompt Customization</h2>
+        <form action="/send-email" method="post">
+            <div class="form-group">
+                <label for="prompt">Customizable Prompt</label>
+                <textarea class="form-control" id="prompt" name="prompt" rows="4" placeholder="Enter your customizable prompt"></textarea>
+                <small class="form-text text-muted">Use placeholders like {Company Name}, {Location}, etc.</small>
+            </div>
+            <div class="form-group">
+                <label for="file_path">Path to the uploaded data file</label>
+                <input type="text" class="form-control" id="file_path" name="file_path" value="{{ file_path }}" readonly>
+            </div>
+            <div class="form-group">
+                <label for="email_column">Column name for email</label>
+                <select class="form-control" id="email_column" name="email_column">
+                    {% for column in columns %}
+                    <option value="{{ column }}">{{ column }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="placeholders">Insert Placeholder</label>
+                <select class="form-control" id="placeholders" onchange="insertPlaceholder()">
+                    <option value="">Select a column</option>
+                    {% for column in columns %}
+                    <option value="{{ column }}">{{ column }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="schedule_time">Schedule Time</label>
+                <input type="datetime-local" class="form-control" id="schedule_time" name="schedule_time" onchange="updateTimer()">
+            </div>
+            <div class="form-group">
+                <label for="batch_size">Batch Size</label>
+                <input type="number" class="form-control" id="batch_size" name="batch_size" placeholder="Enter batch size (e.g., 50)">
+            </div>
+            <div class="form-group">
+                <label for="interval">Interval (minutes)</label>
+                <input type="number" class="form-control" id="interval" name="interval" placeholder="Enter interval in minutes">
+            </div>
+            <div class="form-group">
+                <label for="rate_limit">Rate Limit (emails per minute)</label>
+                <input type="number" class="form-control" id="rate_limit" name="rate_limit" placeholder="Enter rate limit">
+            </div>
+            <div id="timer" class="text-center mb-4" style="font-size: 1.5rem; color: red;"></div>
+            <button type="submit" class="btn btn-primary btn-block">Send Emails</button>
+        </form>
+        {% endif %}
+        <h2 class="text-center mb-4">Real-Time Email Analytics</h2>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Emails Sent</h5>
+                        <p class="card-text" id="total_sent">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Emails Pending</h5>
+                        <p class="card-text" id="pending">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Emails Scheduled</h5>
+                        <p class="card-text" id="scheduled">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Emails Failed</h5>
+                        <p class="card-text" id="failed">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Emails Delivered</h5>
+                        <p class="card-text" id="delivered">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Emails Opened</h5>
+                        <p class="card-text" id="opened">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Emails Bounced</h5>
+                        <p class="card-text" id="bounced">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Response Rate</h5>
+                        <p class="card-text" id="response_rate">0%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <a href="/dashboard" class="btn btn-secondary btn-block mt-4">View Dashboard</a>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        function toggleInputFields() {
+            var inputType = document.getElementById('input_type').value;
+            if (inputType === 'google_sheet') {
+                document.getElementById('csv_input').style.display = 'none';
+                document.getElementById('google_sheet_input').style.display = 'block';
+            } else {
+                document.getElementById('csv_input').style.display = 'block';
+                document.getElementById('google_sheet_input').style.display = 'none';
+            }
+        }
+
+        function insertPlaceholder() {
+            var placeholder = document.getElementById('placeholders').value;
+            if (placeholder) {
+                var prompt = document.getElementById('prompt');
+                prompt.value += `{${placeholder}} `;
+            }
+        }
+
+        function updateTimer() {
+            var scheduleTime = document.getElementById('schedule_time').value;
+            if (scheduleTime) {
+                var countDownDate = new Date(scheduleTime).getTime();
+                var timerElement = document.getElementById('timer');
+
+                var x = setInterval(function() {
+                    var now = new Date().getTime();
+                    var distance = countDownDate - now;
+
+                    var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                    var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                    timerElement.innerHTML = days + "d " + hours + "h " + minutes + "m " + seconds + "s ";
+
+                    if (distance < 0) {
+                        clearInterval(x);
+                        timerElement.innerHTML = "EXPIRED";
+                    }
+                }, 1000);
+            }
+        }
+
+        function updateAnalytics() {
+            fetch('/analytics')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('total_sent').innerText = data.total_sent;
+                    document.getElementById('pending').innerText = data.pending;
+                    document.getElementById('scheduled').innerText = data.scheduled;
+                    document.getElementById('failed').innerText = data.failed;
+                    document.getElementById('delivered').innerText = data.delivered;
+                    document.getElementById('opened').innerText = data.opened;
+                    document.getElementById('bounced').innerText = data.bounced;
+                    document.getElementById('response_rate').innerText = data.response_rate + '%';
+                })
+                .catch(error => console.error('Error fetching analytics:', error));
+        }
+
+        setInterval(updateAnalytics, 5000); // Update every 5 seconds
+    </script>
+</body>
+</html>
