@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
 from utils.mailgun import send_email_via_mailgun, update_email_status_metrics, email_status_metrics, update_mailgun_webhook
 from utils.llm import generate_email_content
-from utils.sheet import load_google_sheet, load_csv
+from utils.sheet import load_google_sheet, load_csv, get_google_sheets
 from celery import Celery
 import os
 import time
@@ -55,6 +55,25 @@ def upload_file():
     if input_type == 'google_sheet':
         sheet_name = request.form.get('sheet_name')
         data = load_google_sheet(sheet_name)
+        if not os.path.exists('uploads'):
+            os.makedirs('uploads')
+
+        # Save the uploaded file to the uploads directory
+        file_path = os.path.join('uploads', sheet_name + '.csv')
+        data.to_csv(file_path, index=False)
+        print(f"File saved to {file_path}")
+
+         # Verify the file content
+        try:
+            if file_path.endswith('.csv'):
+                data = pd.read_csv(file_path)
+            elif file_path.endswith('.xlsx'):
+                data = pd.read_excel(file_path)
+            print(f"Data loaded: {data.head()}")
+        except pd.errors.EmptyDataError:
+            return "No columns to parse from file.", 400
+        except pd.errors.ParserError as e:
+            return f"Error parsing file: {e}", 400
     else:
         file = request.files['file']
         if file:
@@ -83,6 +102,11 @@ def upload_file():
     columns = data.columns.tolist()
     return render_template('index.html', columns=columns, file_path=file_path)
 
+@app.route('/list-sheets', methods=['GET'])
+def list_sheets():
+    sheets = get_google_sheets()
+    return jsonify(sheets)
+
 @app.route('/send-email', methods=['POST'])
 def send_email():
     # Extract email customization data from the request
@@ -99,7 +123,6 @@ def send_email():
     else:
         schedule_time = datetime.now()
 
-    # Check if the file is empty
     if os.stat(data_file_path).st_size == 0:
         return "The uploaded file is empty.", 400
 
@@ -224,7 +247,7 @@ def mailgun_webhook():
     return '', 200
 
 # Flag to ensure the webhook is updated only once
-webhook_updated = False
+webhook_updated = True
 
 @app.before_request
 def initialize():

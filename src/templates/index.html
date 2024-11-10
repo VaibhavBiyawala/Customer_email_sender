@@ -39,23 +39,40 @@
             </div>
             <div class="form-group" id="google_sheet_input" style="display: none;">
                 <label for="sheet_name">Google Sheet Name</label>
-                <input type="text" class="form-control" id="sheet_name" name="sheet_name" placeholder="Enter Google Sheet name">
+                <select class="form-control" id="sheet_name" name="sheet_name">
+                    <!-- Options will be populated dynamically -->
+                </select>
             </div>
             <button type="submit" class="btn btn-primary btn-block">Upload</button>
+            <div class="form-group">
+                <label for="file_path">Path to the uploaded data file</label>
+                <input type="text" class="form-control" id="file_path" name="file_path" value="{{ file_path }}" readonly>
+            </div>
         </form>
+
+        <h2 class="text-center mb-4">Select Email Type</h2>
+        <div class="form-group">
+            <label for="email_type">Email Type</label>
+            <select class="form-control" id="email_type" name="email_type" onchange="checkEmailType()">
+                <option value="mailgun">Mailgun (Default)</option>
+                <option value="gmail">Gmail</option>
+                <option value="outlook">Outlook</option>
+            </select>
+        </div>
 
         {% if columns %}
         <h2 class="text-center mb-4">Email Prompt Customization</h2>
         <form action="/send-email" method="post">
+            <div class="form-group">
+                <label for="file_path">Path to the uploaded data file</label>
+                <input type="text" class="form-control" id="file_path" name="file_path" value="{{ file_path }}" readonly>
+            </div>
             <div class="form-group">
                 <label for="prompt">Customizable Prompt</label>
                 <textarea class="form-control" id="prompt" name="prompt" rows="4" placeholder="Enter your customizable prompt"></textarea>
                 <small class="form-text text-muted">Use placeholders like {Company Name}, {Location}, etc.</small>
             </div>
             <div class="form-group">
-                <label for="file_path">Path to the uploaded data file</label>
-                <input type="text" class="form-control" id="file_path" name="file_path" value="{{ file_path }}" readonly>
-            </div>
             <div class="form-group">
                 <label for="email_column">Column name for email</label>
                 <select class="form-control" id="email_column" name="email_column">
@@ -64,7 +81,6 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="form-group">
                 <label for="placeholders">Insert Placeholder</label>
                 <select class="form-control" id="placeholders" onchange="insertPlaceholder()">
                     <option value="">Select a column</option>
@@ -175,10 +191,27 @@
             if (inputType === 'google_sheet') {
                 document.getElementById('csv_input').style.display = 'none';
                 document.getElementById('google_sheet_input').style.display = 'block';
+                loadGoogleSheets();
             } else {
                 document.getElementById('csv_input').style.display = 'block';
                 document.getElementById('google_sheet_input').style.display = 'none';
             }
+        }
+
+        function loadGoogleSheets() {
+            fetch('/list-sheets')
+                .then(response => response.json())
+                .then(data => {
+                    var sheetSelect = document.getElementById('sheet_name');
+                    sheetSelect.innerHTML = '';
+                    data.forEach(sheet => {
+                        var option = document.createElement('option');
+                        option.value = sheet;
+                        option.text = sheet;
+                        sheetSelect.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error fetching Google Sheets:', error));
         }
 
         function insertPlaceholder() {
@@ -230,7 +263,15 @@
                 .catch(error => console.error('Error fetching analytics:', error));
         }
 
+        function checkEmailType() {
+            var emailType = document.getElementById('email_type').value;
+            if (emailType !== 'mailgun') {
+                alert('This feature is not available. Please select Mailgun (Default).');
+                document.getElementById('email_type').value = 'mailgun';
+            }
+        }
+
         setInterval(updateAnalytics, 5000); // Update every 5 seconds
     </script>
 </body>
-</html>
+</html>  

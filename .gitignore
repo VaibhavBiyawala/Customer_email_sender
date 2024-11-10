@@ -8,6 +8,7 @@ ngrok-v3-stable-windows-amd64.zip
 ngrok-v3-stable-windows-amd64
 dump.rdb
 server_log.txt
+GCloud/
 
 # C extensions
 *.so

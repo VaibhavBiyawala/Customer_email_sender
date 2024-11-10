@@ -1,6 +1,7 @@
 import requests
 import os
 from dotenv import load_dotenv
+import pandas as pd
 import logging
 
 # Load environment variables from .env file
@@ -76,7 +77,7 @@ def get_ngrok_url():
 def update_mailgun_webhook():
     """Update the Mailgun webhook URL with the current ngrok URL."""
     ngrok_url = get_ngrok_url()
-    if ngrok_url:
+    if (ngrok_url):
         webhook_url = f"{ngrok_url}/webhook/mailgun"
         try:
             for event in ["delivered", "opened", "bounced", "failed"]:
@@ -91,3 +92,16 @@ def update_mailgun_webhook():
             logging.error(f"Failed to update webhook: {e}")
     else:
         logging.error("Ngrok URL is not available.")
+
+def load_google_sheet(sheet_name):
+    """Loads data from a Google Sheet."""
+    import gspread
+    from oauth2client.service_account import ServiceAccountCredentials
+
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_name('D:\Sem 7\BreakThough_AI\Customer_email_sender\GCloud\email-sender-441304-e637b6539380.json', scope)
+    client = gspread.authorize(creds)
+
+    sheet = client.open(sheet_name).sheet1
+    data = sheet.get_all_records()
+    return pd.DataFrame(data)
