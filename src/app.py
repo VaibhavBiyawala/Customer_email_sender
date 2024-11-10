@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, jsonify, redirect, url_for, session
+from flask import Flask, request, render_template, jsonify, redirect, url_for, session, send_from_directory
 import pandas as pd
 from datetime import datetime, timedelta
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -17,7 +17,7 @@ import json
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='/static')
 app.secret_key = 'your_secret_key'
 socketio = SocketIO(app)
 
@@ -49,10 +49,20 @@ email_status_details = []
 def home():
     return render_template('index.html')
 
+@app.route('/upload')
+def upload_page():
+    return render_template('upload.html')
+
+@app.route('/send-email-page')
+def send_email_page():
+    columns = session.get('columns', [])
+    file_path = session.get('file_path', '')
+    return render_template('send_email.html', columns=columns, file_path=file_path)
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     input_type = request.form.get('input_type')
-    if input_type == 'google_sheet':
+    if (input_type == 'google_sheet'):
         sheet_name = request.form.get('sheet_name')
         data = load_google_sheet(sheet_name)
         if not os.path.exists('uploads'):
@@ -63,7 +73,7 @@ def upload_file():
         data.to_csv(file_path, index=False)
         print(f"File saved to {file_path}")
 
-         # Verify the file content
+        # Verify the file content
         try:
             if file_path.endswith('.csv'):
                 data = pd.read_csv(file_path)
@@ -100,7 +110,9 @@ def upload_file():
 
     # Extract columns and prepare for further use
     columns = data.columns.tolist()
-    return render_template('index.html', columns=columns, file_path=file_path)
+    session['columns'] = columns
+    session['file_path'] = file_path
+    return redirect(url_for('send_email_page'))
 
 @app.route('/list-sheets', methods=['GET'])
 def list_sheets():
@@ -150,8 +162,8 @@ def send_email():
     return render_template('index.html', columns=data.columns.tolist(), file_path=data_file_path)
 
 @app.route('/analytics')
-def analytics():
-    return jsonify(email_status_metrics)
+def analytics_page():
+    return render_template('analytics.html', metrics=email_status_metrics)
 
 @app.route('/dashboard')
 def dashboard():
@@ -245,6 +257,10 @@ def mailgun_webhook():
     logging.debug(f"Updated metrics: {email_status_metrics}")
     socketio.emit('update_status', email_status_details)
     return '', 200
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'), 'favicon.ico')
 
 # Flag to ensure the webhook is updated only once
 webhook_updated = True

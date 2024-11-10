@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Data</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
+
+</head>
+<body>
+    <a href="/" class="home-button">&#8962;</a>
+    <div class="container">
+        <div class="form-container">
+            <h1 class="text-center mb-4">Upload Data</h1>
+            <form action="/upload" method="post" enctype="multipart/form-data" class="mb-4">
+                <div class="form-group">
+                    <label for="input_type">Input Type</label>
+                    <select class="form-control" id="input_type" name="input_type" onchange="toggleInputFields()">
+                        <option value="csv">CSV File</option>
+                        <option value="google_sheet">Google Sheet</option>
+                    </select>
+                </div>
+                <div class="form-group" id="csv_input">
+                    <label for="file">Choose file</label>
+                    <input type="file" class="form-control-file" id="file" name="file">
+                </div>
+                <div class="form-group" id="google_sheet_input" style="display: none;">
+                    <label for="sheet_name">Google Sheet Name</label>
+                    <select class="form-control" id="sheet_name" name="sheet_name">
+                        <!-- Options will be populated dynamically -->
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Upload</button>
+            </form>
+        </div>
+    </div>
+    <script>
+        function toggleInputFields() {
+            var inputType = document.getElementById('input_type').value;
+            if (inputType === 'google_sheet') {
+                document.getElementById('csv_input').style.display = 'none';
+                document.getElementById('google_sheet_input').style.display = 'block';
+                loadGoogleSheets();
+            } else {
+                document.getElementById('csv_input').style.display = 'block';
+                document.getElementById('google_sheet_input').style.display = 'none';
+            }
+        }
+
+        function loadGoogleSheets() {
+            fetch('/list-sheets')
+                .then(response => response.json())
+                .then(data => {
+                    var sheetSelect = document.getElementById('sheet_name');
+                    sheetSelect.innerHTML = '';
+                    data.forEach(sheet => {
+                        var option = document.createElement('option');
+                        option.value = sheet;
+                        option.text = sheet;
+                        sheetSelect.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error fetching Google Sheets:', error));
+        }
+    </script>
+</body>
+</html>

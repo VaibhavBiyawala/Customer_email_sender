@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send Emails</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
+    <style>
+        .form-container {
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 30px;
+            border-radius: 10px;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+        }
+        .form-row .form-group {
+            flex: 1;
+            margin-right: 10px;
+        }
+        .form-row .form-group:last-child {
+            margin-right: 0;
+        }        
+    </style>
+</head>
+<body>
+    <a href="/" class="home-button">&#8962;</a>
+    <div class="container">
+        <div class="form-container">
+            <h1 class="text-center mb-4">Send Emails</h1>
+            <div class="form-group">
+                <label for="email_type">Email Type</label>
+                <select class="form-control" id="email_type" name="email_type" onchange="checkEmailType()">
+                    <option value="mailgun">Mailgun (Default)</option>
+                    <option value="gmail">Gmail</option>
+                    <option value="outlook">Outlook</option>
+                </select>
+            </div>
+
+            {% if columns %}
+            <form action="/send-email" method="post">
+                <div class="form-group">
+                    <label for="prompt">Customizable Prompt</label>
+                    <textarea class="form-control" id="prompt" name="prompt" rows="4" placeholder="Enter your customizable prompt like {Company Name}, {Location}, etc."></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="placeholders">Insert Placeholder</label>
+                        <select class="form-control" id="placeholders" onchange="insertPlaceholder()">
+                            <option value="">Select a column</option>
+                            {% for column in columns %}
+                            <option value="{{ column }}">{{ column }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="email_column">Column name for email</label>
+                        <select class="form-control" id="email_column" name="email_column">
+                            {% for column in columns %}
+                            <option value="{{ column }}">{{ column }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="schedule_time">Schedule Time</label>
+                        <input type="datetime-local" class="form-control" id="schedule_time" name="schedule_time" onchange="updateTimer()">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="file_path">File path</label>
+                    <input type="text" class="form-control" id="file_path" name="file_path" value="{{ file_path }}" readonly>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="batch_size">Batch Size</label>
+                        <input type="number" class="form-control" id="batch_size" name="batch_size" placeholder="Enter batch size (e.g., 50)">
+                    </div>
+                    <div class="form-group">
+                        <label for="interval">Interval (minutes)</label>
+                        <input type="number" class="form-control" id="interval" name="interval" placeholder="Enter interval in minutes">
+                    </div>
+                    <div class="form-group">
+                        <label for="rate_limit">Rate Limit (emails per minute)</label>
+                        <input type="number" class="form-control" id="rate_limit" name="rate_limit" placeholder="Enter rate limit">
+                    </div>
+                </div>
+                <div id="timer" class="text-center mb-4" style="font-size: 1.5rem; color: red;"></div>
+                <button type="submit" class="btn btn-primary btn-block">Send Emails</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    <script>
+        function insertPlaceholder() {
+            var placeholder = document.getElementById('placeholders').value;
+            if (placeholder) {
+                var prompt = document.getElementById('prompt');
+                prompt.value += `{${placeholder}} `;
+            }
+        }
+
+        function updateTimer() {
+            var scheduleTime = document.getElementById('schedule_time').value;
+            if (scheduleTime) {
+                var countDownDate = new Date(scheduleTime).getTime();
+                var timerElement = document.getElementById('timer');
+
+                var x = setInterval(function() {
+                    var now = new Date().getTime();
+                    var distance = countDownDate - now;
+
+                    var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                    var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                    timerElement.innerHTML = days + "d " + hours + "h " + minutes + "m " + seconds + "s ";
+
+                    if (distance < 0) {
+                        clearInterval(x);
+                        timerElement.innerHTML = "EXPIRED";
+                    }
+                }, 1000);
+            }
+        }
+
+        function checkEmailType() {
+            var emailType = document.getElementById('email_type').value;
+            if (emailType !== 'mailgun') {
+                alert('This feature is not available. Please select Mailgun (Default).');
+                document.getElementById('email_type').value = 'mailgun';
+            }
+        }
+    </script>
+</body>
+</html>

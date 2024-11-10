@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Email Analytics</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet">
+
+</head>
+<body>
+    <a href="/" class="home-button">&#8962;</a>
+    <div class="container">
+        <h1 class="text-center mb-4 text-black">Real-Time Email Analytics</h1>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Total Emails Sent</h5>
+                        <p class="card-text" id="total_sent">{{ metrics.total_sent }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Emails Pending</h5>
+                        <p class="card-text" id="pending">{{ metrics.pending }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Emails Scheduled</h5>
+                        <p class="card-text" id="scheduled">{{ metrics.scheduled }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Emails <br> Failed</h5>
+                        <p class="card-text" id="failed">{{ metrics.failed }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Emails Delivered</h5>
+                        <p class="card-text" id="delivered">{{ metrics.delivered }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Emails Opened</h5>
+                        <p class="card-text" id="opened">{{ metrics.opened }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Emails Bounced</h5>
+                        <p class="card-text" id="bounced">{{ metrics.bounced }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Response Rate</h5>
+                        <p class="card-text" id="response_rate">{{ metrics.response_rate }}%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script>
+    setTimeout(function() {
+        location.reload();
+    }, 3000);
+    </script>
+</body>
+</html>
