@@ -17,7 +17,7 @@ This project is a custom email sender application that allows users to upload da
 - Redis (for Celery)
 - Ngrok (for webhook URL)
 - Mailgun account and API key
-- Google Cloud service account credentials for Google Sheets access
+- Google Cloud service account credentials for Google Sheets access (With Google Sheet API and Google Drive API Enabled)
 
 ## Setup
 
@@ -87,14 +87,17 @@ This project is a custom email sender application that allows users to upload da
     - Navigate to the "Upload Data" page.
     - Select the input type (CSV File or Google Sheet).
     - Upload the file or select the Google Sheet.
+            - Note : if you select google sheet than the sheet which have access to google service account will only visible.
     - Click "Upload".
 
 3. Customize and send emails:
 
     - Navigate to the "Send Emails" page.
+    - Select Email type i.e Mailgun, Google, Outlook. 
     - Customize the email prompt using the provided template.
-    - Select the column for email addresses.
-    - Schedule the emails or send them immediately.
+    - Select the column which contains email addresses in your sheet.
+            - Note : If you use mailgun than the email address in the sheets should be added and verified in mailgun.
+    - Schedule the emails.
     - Click "Send Emails".
 
 4. View real-time analytics:
